@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulk Gemini Watermark Remover</title>
+  <meta name="description" content="Remove Gemini AI watermarks from multiple images at once. Free, private, 100% browser-based.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'%3E%3Cpath d='M12 3l-1.9 5.8-5.8 1.9 5.8 1.9 1.9 5.8 1.9-5.8 5.8-1.9-5.8-1.9z'/%3E%3C/svg%3E">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6366f1',
+            'primary-light': '#818cf8',
+            'primary-dark': '#4f46e5',
+          },
+          animation: {
+            'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 4px; }
+
+    .drop-zone-active {
+      border-color: #6366f1 !important;
+      background-color: rgba(99, 102, 241, 0.08) !important;
+    }
+
+    .card-shimmer {
+      background: linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.06) 50%, transparent 100%);
+      background-size: 200% 100%;
+      animation: shimmer 1.6s infinite;
+    }
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+    .status-processing { animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+    .comparison-container { position: relative; user-select: none; }
+    .medium-zoom-overlay, .medium-zoom-image--opened { z-index: 999; }
+    .medium-zoom-overlay { backdrop-filter: blur(4px); }
+
+    body.loading { opacity: 0; }
+    body { transition: opacity 0.15s ease; }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 antialiased min-h-screen flex flex-col loading">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+          <svg class="w-4.5 h-4.5 text-white w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="m12 3-1.9 5.8-5.8 1.9 5.8 1.9 1.9 5.8 1.9-5.8 5.8-1.9-5.8-1.9Z"/>
+          </svg>
+        </div>
+        <span class="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">
+          Bulk <span class="text-indigo-600 dark:text-indigo-400">Gemini</span> Watermark Remover
+        </span>
+      </div>
+
+      <nav class="flex items-center gap-1 sm:gap-2">
+        <a href="https://github.com/GargantuaX/gemini-watermark-remover" target="_blank" rel="noopener noreferrer"
+           class="p-2 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors hidden sm:flex items-center gap-1.5 text-sm font-medium">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.54-1.38-1.33-1.75-1.33-1.75-1.09-.74.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.49 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.04.13 3 .4 2.28-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58C20.56 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          Source
+        </a>
+        <button id="themeToggle" class="p-2 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364-.707-.707M6.343 6.343l-.707-.707m12.728 0-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/></svg>
+          <svg class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 0 1 8.646 3.646 9.003 9.003 0 0 0 12 21a9.003 9.003 0 0 0 8.354-5.646z"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+
+    <!-- Hero / Upload -->
+    <section class="relative pt-12 pb-10 px-4 text-center overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-b from-indigo-50/60 to-transparent dark:from-indigo-950/20 dark:to-transparent pointer-events-none"></div>
+      <div class="relative max-w-3xl mx-auto">
+        <div class="inline-flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 text-xs font-medium px-3 py-1 rounded-full border border-indigo-200 dark:border-indigo-800 mb-5">
+          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"/></svg>
+          100% Private — Images never leave your browser
+        </div>
+
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight mb-3 tracking-tight">
+          Remove Gemini Watermarks<br>
+          <span class="text-indigo-600 dark:text-indigo-400">at Scale</span>
+        </h1>
+        <p class="text-gray-500 dark:text-gray-400 text-base md:text-lg max-w-xl mx-auto mb-8">
+          Drop all your images at once. Processed locally using lossless reverse alpha blending — no uploads, no limits.
+        </p>
+
+        <!-- Upload Area -->
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 p-3 mb-4 shadow-sm">
+          <div id="uploadArea" class="relative flex flex-col items-center justify-center h-52 rounded-xl cursor-pointer transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 group">
+            <div class="w-14 h-14 bg-indigo-50 dark:bg-indigo-950/50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+              <svg class="w-7 h-7 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/>
+              </svg>
+            </div>
+            <p class="text-base font-semibold text-gray-700 dark:text-gray-200 mb-1">Drop images here, or <span class="text-indigo-600 dark:text-indigo-400">click to browse</span></p>
+            <p class="text-sm text-gray-400 dark:text-gray-500">JPEG · PNG · WebP &nbsp;·&nbsp; Up to 20 MB each</p>
+            <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+          </div>
+        </div>
+
+        <!-- Steps -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-0 text-sm text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center flex-shrink-0">1</span>
+            <span>Select images</span>
+          </div>
+          <svg class="w-4 h-4 text-gray-300 dark:text-gray-600 rotate-90 sm:rotate-0 flex-shrink-0 sm:mx-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center flex-shrink-0">2</span>
+            <span>Auto-process locally</span>
+          </div>
+          <svg class="w-4 h-4 text-gray-300 dark:text-gray-600 rotate-90 sm:rotate-0 flex-shrink-0 sm:mx-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center flex-shrink-0">3</span>
+            <span>Download results</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Single image comparison view -->
+    <section id="singlePreview" class="max-w-7xl mx-auto px-4 pb-16" style="display:none;">
+      <div class="flex flex-col xl:flex-row gap-6">
+        <!-- Comparison panel -->
+        <div class="flex-1 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+          <div class="px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <h3 class="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2 text-sm">
+              <span class="w-2 h-2 rounded-full bg-indigo-500"></span> Before / After
+            </h3>
+            <div class="flex gap-4 text-xs font-mono text-gray-400">
+              <span id="originalInfo"></span>
+              <span id="processedInfo" style="display:none;" class="text-indigo-500"></span>
+            </div>
+          </div>
+          <div class="bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZjhmOGY4Ii8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNmOGY4ZjgiLz48L3N2Zz4=')] dark:bg-gray-950 select-none">
+            <div id="comparisonContainer" class="relative mx-auto w-fit max-w-full" style="max-height:65vh;">
+              <img id="originalImage" class="block w-auto h-auto max-w-full max-h-[65vh] object-contain" draggable="false" alt="Original" />
+              <div id="processedOverlay" class="absolute top-0 left-0 h-full w-[50%] overflow-hidden border-r-2 border-white/70 shadow-[0_0_8px_rgba(0,0,0,0.25)] box-content z-10" style="display:none;">
+                <img id="processedImage" class="block h-full max-w-none object-contain" draggable="false" alt="Processed" />
+              </div>
+              <div id="sliderHandle" class="absolute top-0 bottom-0 w-10 -ml-5 z-20 cursor-col-resize flex items-center justify-center" style="left:50%;display:none;">
+                <div class="w-0.5 h-full bg-white/60 backdrop-blur-sm"></div>
+                <div class="absolute w-8 h-8 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center border border-gray-200 dark:border-gray-600">
+                  <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l-3 3 3 3m8-6l3 3-3 3"/></svg>
+                </div>
+              </div>
+              <div class="absolute top-3 left-3 bg-black/40 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none z-30">After</div>
+              <div class="absolute top-3 right-3 bg-black/40 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm pointer-events-none z-30">Before</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action panel -->
+        <div class="xl:w-64 flex-shrink-0">
+          <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 xl:sticky xl:top-20 shadow-sm">
+            <h4 class="font-semibold text-gray-900 dark:text-white mb-1 text-sm">Result</h4>
+            <div id="singleStatus" class="text-xs text-gray-400 mb-5 min-h-[2.5rem]"></div>
+            <div class="space-y-2.5">
+              <button id="copyBtn" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2" style="display:none;">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Copy to clipboard
+              </button>
+              <button id="downloadBtn" class="w-full py-2.5 bg-gray-900 dark:bg-gray-700 hover:bg-gray-800 dark:hover:bg-gray-600 text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2" style="display:none;">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download PNG
+              </button>
+              <button id="resetBtn" class="w-full py-2.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Process more images
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Multi / Bulk view -->
+    <section id="multiPreview" class="max-w-7xl mx-auto px-4 pb-16" style="display:none;">
+      <!-- Stats bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="flex items-center gap-2">
+            <span id="statTotal" class="inline-flex items-center gap-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full">
+              <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+              <span id="statTotalVal">0</span> total
+            </span>
+          </div>
+          <span id="statDone" class="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-xs font-medium px-3 py-1.5 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span id="statDoneVal">0</span> done
+          </span>
+          <span id="statSkipped" class="inline-flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-xs font-medium px-3 py-1.5 rounded-full" style="display:none;">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span id="statSkippedVal">0</span> no watermark
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="downloadAllBtn" class="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition-colors flex items-center gap-2" style="display:none;">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download all as ZIP
+          </button>
+          <button id="resetBtnMulti" class="py-2 px-4 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 rounded-xl text-sm font-medium transition-colors">
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="w-full h-1 bg-gray-100 dark:bg-gray-800 rounded-full mb-5 overflow-hidden">
+        <div id="progressBar" class="h-full bg-indigo-500 rounded-full transition-all duration-300" style="width:0%"></div>
+      </div>
+
+      <!-- Image grid -->
+      <div id="imageList" class="space-y-2"></div>
+    </section>
+
+    <!-- Features section -->
+    <section class="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 py-16">
+      <div class="max-w-5xl mx-auto px-4">
+        <h2 class="text-center text-xl font-bold text-gray-900 dark:text-white mb-10">Why use this tool?</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div class="text-center p-4">
+            <div class="w-11 h-11 bg-indigo-100 dark:bg-indigo-950/50 rounded-xl flex items-center justify-center mx-auto mb-3">
+              <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-1.5 text-sm">Lossless precision</h3>
+            <p class="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">Reverse alpha blending recovers exact original pixels — not AI guessing.</p>
+          </div>
+          <div class="text-center p-4">
+            <div class="w-11 h-11 bg-indigo-100 dark:bg-indigo-950/50 rounded-xl flex items-center justify-center mx-auto mb-3">
+              <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            </div>
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-1.5 text-sm">Fully private</h3>
+            <p class="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">Everything runs in your browser. Your images are never uploaded anywhere.</p>
+          </div>
+          <div class="text-center p-4">
+            <div class="w-11 h-11 bg-indigo-100 dark:bg-indigo-950/50 rounded-xl flex items-center justify-center mx-auto mb-3">
+              <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+            </div>
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-1.5 text-sm">True bulk processing</h3>
+            <p class="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">Drop hundreds of images at once. Parallel processing with ZIP download.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-400 py-6">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+      <p>Built on <a href="https://github.com/GargantuaX/gemini-watermark-remover" class="text-indigo-400 hover:text-indigo-300 transition-colors">gemini-watermark-remover</a> by GargantuaX — MIT License</p>
+      <p>For personal and educational use only.</p>
+    </div>
+  </footer>
+
+  <!-- Loading overlay -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm z-[60] hidden items-center justify-center">
+    <div class="flex flex-col items-center gap-3">
+      <div class="w-10 h-10 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+      <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Initializing engine...</p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
