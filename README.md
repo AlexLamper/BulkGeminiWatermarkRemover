@@ -1,5 +1,7 @@
 # Bulk Gemini Watermark Remover
 
+https://www.bulk-gemini-watermark-remover.xyz/
+
 > **Attribution notice:** The core watermark removal engine in this project was **not created by me**. All credit for the original algorithm and implementation goes to the authors of [gemini-watermark-remover](https://github.com/GargantuaX/gemini-watermark-remover) - see [Credits](#credits) below.
 
 A bulk-focused web UI and CLI tool for removing watermarks from Google Gemini AI-generated images. Drop in dozens of images at once and download them clean - everything runs locally in your browser, meaning nothing is uploaded to the cloud. Therefore it's also very fast.
