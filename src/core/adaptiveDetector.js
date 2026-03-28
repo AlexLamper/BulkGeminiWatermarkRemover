@@ -356,11 +356,16 @@ export function detectAdaptiveWatermarkRegion({
     );
     const scaleList = createScaleList(minSize, maxSize);
 
-    const marginRange = Math.max(32, Math.round(baseSize * 0.75));
-    const minMarginRight = clamp(defaultConfig.marginRight - marginRange, 8, width - minSize - 1);
-    const maxMarginRight = clamp(defaultConfig.marginRight + marginRange, minMarginRight, width - minSize - 1);
-    const minMarginBottom = clamp(defaultConfig.marginBottom - marginRange, 8, height - minSize - 1);
-    const maxMarginBottom = clamp(defaultConfig.marginBottom + marginRange, minMarginBottom, height - minSize - 1);
+    const marginRangeX = Math.max(64, Math.round(baseSize * 1.5));
+    const marginRangeY = Math.max(64, Math.round(baseSize * 1.5));
+    
+    // In case the image was cropped or letterboxed, allow searching all the way to the edge (0)
+    // and reasonably far into the image.
+    const minMarginRight = clamp(defaultConfig.marginRight - marginRangeX, 0, width - minSize - 1);
+    const maxMarginRight = clamp(defaultConfig.marginRight + marginRangeX, minMarginRight, width - minSize - 1);
+    
+    const minMarginBottom = clamp(defaultConfig.marginBottom - marginRangeY, 0, height - minSize - 1);
+    const maxMarginBottom = clamp(defaultConfig.marginBottom + marginRangeY, minMarginBottom, height - minSize - 1);
 
     const topK = [];
     const pushTopK = (candidate) => {

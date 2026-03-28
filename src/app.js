@@ -234,7 +234,7 @@ function createCard(item) {
     el.className = 'flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3 shadow-sm transition-colors';
     el.innerHTML = `
         <div class="w-12 h-12 flex-shrink-0 bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center">
-            <img id="thumb-${item.id}" class="w-full h-full object-cover" data-zoomable src="" alt="" />
+            <img id="thumb-${item.id}" class="w-full h-full object-contain" data-zoomable src="" alt="" />
         </div>
         <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">${item.name}</p>
@@ -452,7 +452,7 @@ async function init() {
         scrollOffset: 0,
     });
 
-    uploadArea.addEventListener('click', () => fileInput.click());
+    // uploadArea.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleFileSelect);
     downloadAllBtn.addEventListener('click', downloadAll);
     resetBtn.addEventListener('click', reset);
