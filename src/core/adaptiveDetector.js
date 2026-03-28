@@ -3,7 +3,7 @@
  * Uses coarse-to-fine template matching around bottom-right region.
  */
 
-const DEFAULT_THRESHOLD = 0.35;
+const DEFAULT_THRESHOLD = 0.25;
 const EPSILON = 1e-8;
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
